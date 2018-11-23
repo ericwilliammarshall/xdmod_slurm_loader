@@ -16,14 +16,30 @@ import os
 
 # TODO: read the list of clusters from the config file in /etc/xdmod
 clusters = ('amarel',  'nh3', 'hpcc', 'perceval', 'amarelc', 'amarelg2', 'amareln')
-# start date 2015-11-01
 # TODO: add argument parsing and the ability to pick dates
-start_date = date(2015,11,01)
+# original start date 2015-11-01
+# for our systems
+#start_date = date(2015,11,01)
+# our restrart date 2016-02-21
+start_date = date(2016,02,21)
 # TODO: add python file control instead of hard coded linux paths
 ingest_file = '/tmp/ingest.dump'
 ingest_clean_file = '/tmp/ingest_clean.dump'
 # number of pipe characters in a proper line of data
 magic_num = 24
+
+def ingest():
+    # run the xdmod-ingestor
+    print()
+    print("calling the ingester")
+    check = call(['xdmod-ingestor'])
+    print(check)    
+    # run service httpd reload
+    print()
+    print("restarting httpd ")
+    check = call(['service', 'httpd','reload'])
+    print(check)    
+    print()
 
 
 def scrub_file():
@@ -62,17 +78,6 @@ def eachtime(cluster, the_date):
     	input = 'xdmod-shredder -r ' + cluster + ' -f slurm -i ' + ingest_clean_file
     	check = check_output(input, shell=True) 
     	print(check)    
-    	# run the xdmod-ingestor
-    	print()
-    	print("calling the ingester")
-        check = call(['xdmod-ingestor'])
-        print(check)    
-        # run service httpd reload
-        print()
-        print("restarting httpd ")
-        check = call(['service', 'httpd','reload'])
-        print(check)    
-        print()
     else:
 	print("empty ingest file")
     # print a time stamp
@@ -90,4 +95,7 @@ for day in range(number_of_days):
     # and for each cluster we have or had
     for cluster in clusters:
         print('    ' + cluster)
-	eachtime(cluster, day_format)
+        eachtime(cluster, day_format)
+
+	# after loding up a day of data, ingest and restart httpd
+	ingest()
