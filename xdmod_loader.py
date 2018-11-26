@@ -16,19 +16,30 @@ import os
 
 # TODO: read the list of clusters from the config file in /etc/xdmod
 clusters = ('amarel',  'nh3', 'hpcc', 'perceval', 'amarelc', 'amarelg2', 'amareln')
+
 # TODO: add argument parsing and the ability to pick dates
 # original start date 2015-11-01
 # for our systems
-#start_date = date(2015,11,01)
+# start_date = date(2015,11,01)
 # our restrart date 2016-02-21
 start_date = date(2016,02,21)
+
 # TODO: add python file control instead of hard coded linux paths
 ingest_file = '/tmp/ingest.dump'
 ingest_clean_file = '/tmp/ingest_clean.dump'
+
 # number of pipe characters in a proper line of data
+# the number of pipe characters is a proxy for correctly formed data
+# if we don't have all the pipes, it is truncated or an array of jobs
 magic_num = 24
 
+# ingest_every_so_many_days is how often we run the ingestion
+# for us, this process takes several hours, so in order to catch up 
+# I can't run it for every day, since it almost takes a day to ingest!
+ingest_every_so_many_days = 14
+
 def ingest():
+	# ingest is the most time consuming part by hours!!
     # run the xdmod-ingestor
     print()
     print("calling the ingester")
@@ -97,5 +108,6 @@ for day in range(number_of_days):
         print('    ' + cluster)
         eachtime(cluster, day_format)
 
-	# after loding up a day of data, ingest and restart httpd
-	ingest()
+	# after loding up a few dayof data, ingest and restart httpd
+    if (ingest_every_so_many_days % number_of_days) == 0:
+	    ingest()
