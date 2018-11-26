@@ -21,8 +21,8 @@ clusters = ('amarel',  'nh3', 'hpcc', 'perceval', 'amarelc', 'amarelg2', 'amarel
 # original start date 2015-11-01
 # for our systems
 # start_date = date(2015,11,01)
-# our restrart date 2016-02-21
-start_date = date(2016,02,21)
+# our restrart date 2016-02-25
+start_date = date(2016,02,25)
 
 # TODO: add python file control instead of hard coded linux paths
 ingest_file = '/tmp/ingest.dump'
@@ -109,5 +109,6 @@ for day in range(number_of_days):
         eachtime(cluster, day_format)
 
 	# after loding up a few dayof data, ingest and restart httpd
-    if (ingest_every_so_many_days % number_of_days) == 0:
+    if day != 0 and (ingest_every_so_many_days % day) == 0:
 	    ingest()
+
