@@ -6,6 +6,7 @@
 #import subprocess
 #import datetime
 
+from time import sleep
 from os import stat
 from datetime import date
 from datetime import datetime
@@ -20,9 +21,10 @@ clusters = ('amarel',  'nh3', 'hpcc', 'perceval', 'amarelc', 'amarelg2', 'amarel
 # TODO: add argument parsing and the ability to pick dates
 # original start date 2015-11-01
 # for our systems
-# start_date = date(2015,11,01)
+start_date = date(2015,11,01)
+
 # our restrart date 2016-02-25
-start_date = date(2016,02,25)
+# start_date = date(2016,02,25)
 
 # TODO: add python file control instead of hard coded linux paths
 ingest_file = '/tmp/ingest.dump'
@@ -36,7 +38,7 @@ magic_num = 24
 # ingest_every_so_many_days is how often we run the ingestion
 # for us, this process takes several hours, so in order to catch up 
 # I can't run it for every day, since it almost takes a day to ingest!
-ingest_every_so_many_days = 14
+ingest_every_so_many_days = 2
 
 def ingest():
 	# ingest is the most time consuming part by hours!!
@@ -56,7 +58,7 @@ def ingest():
 def scrub_file():
     """ filter the input file to remove truncated lines which crash the xmod-ingestor. This also removes the short lines that sacct generates for some failed array jobs (which also crash the xdmod ingestor"""  	
     with open(ingest_file, 'r') as ingest:	
-        with open(ingest_clean_file, 'w') as clean_ingest:
+        with open(ingest_clean_file, 'w', 0 ) as clean_ingest:
             for line in ingest: 
                 count = line.count('|')
 		if count == magic_num:
@@ -78,6 +80,8 @@ def eachtime(cluster, the_date):
     print(input)
     check = check_output( input, shell=True )
     #        sacct --allusers --parsable2 --noheader --allocations --duplicates --clusters $one --format jobid,jobidraw,cluster,partition,account,group,gid,user,uid,submit,eligible,start,end,elapsed,exitcode,state,nnodes,ncpus,reqcpus,reqmem,reqgres,reqtres,timelimit,nodelist,jobname --state CANCELLED,COMPLETED,FAILED,NODE_FAIL,PREEMPTED,TIMEOUT --starttime 2018-06-29T03:59:37 --endtime 2018-07-10T03:59:37 >/tmp/ingest.dump
+    # pause for a few seconds
+    sleep(5)
     #        xdmod-shredder -r  -f slurm -i /tmp/ingest.dump 
     # if the file has data, lets ingest it
     if stat(ingest_file).st_size != 0:
@@ -87,6 +91,7 @@ def eachtime(cluster, the_date):
 
     	print("calling the shredder")
     	input = 'xdmod-shredder -r ' + cluster + ' -f slurm -i ' + ingest_clean_file
+    	print( input )
     	check = check_output(input, shell=True) 
     	print(check)    
     else:
@@ -106,9 +111,10 @@ for day in range(number_of_days):
     # and for each cluster we have or had
     for cluster in clusters:
         print('    ' + cluster)
+		# 5 second pause
+        sleep(5)
         eachtime(cluster, day_format)
 
 	# after loding up a few dayof data, ingest and restart httpd
     if day != 0 and (ingest_every_so_many_days % day) == 0:
 	    ingest()
-
