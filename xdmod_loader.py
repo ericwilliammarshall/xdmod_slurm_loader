@@ -94,28 +94,25 @@ def eachtime(cluster, the_date):
 	
 	# TODO: add error checking
     #        sacct --allusers --parsable2 --noheader --allocations --duplicates --clusters $one --format jobid,jobidraw,cluster,partition,account,group,gid,user,uid,submit,eligible,start,end,elapsed,exitcode,state,nnodes,ncpus,reqcpus,reqmem,reqgres,reqtres,timelimit,nodelist,jobname --state CANCELLED,COMPLETED,FAILED,NODE_FAIL,PREEMPTED,TIMEOUT --starttime 2018-06-29T03:59:37 --endtime 2018-07-10T03:59:37 >/tmp/ingest.dump
-
-    #        xdmod-shredder -r  -f slurm -i /tmp/ingest.dump 
     input =  'sacct --allusers --parsable2 --noheader --allocations --duplicates --clusters ' + cluster + ' --format jobid,jobidraw,cluster,partition,account,group,gid,user,uid,submit,eligible,start,end,elapsed,exitcode,state,nnodes,ncpus,reqcpus,reqmem,reqgres,reqtres,timelimit,nodelist,jobname --state CANCELLED,COMPLETED,FAILED,NODE_FAIL,PREEMPTED,TIMEOUT --starttime ' + start_time + ' --endtime '+ end_time + ' > ' + ingest_file
     #print(input)
     print("done calling sacct \n")
     check = check_output( input, shell=True )
 
-    
+    #        xdmod-shredder -r  -f slurm -i /tmp/ingest.dump 
     # if the file has data, lets ingest it
     if stat(ingest_file).st_size != 0:
-	print("cleaning the data")
-	scrub_file()
-    	print()
+        print("cleaning the data")
+        scrub_file()
 
-    	print("calling the shredder")
-    	input = 'xdmod-shredder -r ' + cluster + ' -f slurm -i ' + ingest_clean_file
-    	#print( input )
-    	check = check_output(input, shell=True) 
-    	#print(check)    
-    	print("done calling the shredder")
+        print("\ncalling the shredder")
+        input = 'xdmod-shredder -r ' + cluster + ' -f slurm -i ' + ingest_clean_file
+       	#print( input )
+        check = check_output(input, shell=True) 
+        #print(check)    
+        print("done calling the shredder")
     else:
-	print("empty ingest file")
+	    print("empty ingest file")
     # print a time stamp
     print(date.today().strftime("%Y-%m-%d %H:%M"))
 
