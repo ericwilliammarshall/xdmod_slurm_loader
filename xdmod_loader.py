@@ -15,16 +15,35 @@ from subprocess import call
 from subprocess import check_output 
 import os
 
+# TODO add a verbose option which enables ar disables the s commands
 # TODO: read the list of clusters from the config file in /etc/xdmod
 clusters = ('amarel',  'nh3', 'hpcc', 'perceval', 'amarelc', 'amarelg2', 'amareln')
 
 # TODO: add argument parsing and the ability to pick dates
 # original start date 2015-11-01
 # for our systems
-start_date = date(2015,11,01)
+#start_date = date(2015,11,29)
+# test start
+start_date = date(2016,02,01)
+date(2016,02,01)
+
 
 # our restrart date 2016-02-25
-# start_date = date(2016,02,25)
+# 2015-12-30
+# 2016-03-26
+#start_date = date(2016,04,10)
+
+# hpcc was misconfigured at first
+skip_hpcc_until = date(2016,01,10)
+# skip dates with bad data
+skip_perceval_dates = (
+	date(2015,02,01)
+    #date(2016,02,16),
+    #date(2016,02,17),
+    #date(2016,02,18),
+    #date(2016,02,19),
+    )
+
 
 # TODO: add python file control instead of hard coded linux paths
 ingest_file = '/tmp/ingest.dump'
@@ -38,21 +57,20 @@ magic_num = 24
 # ingest_every_so_many_days is how often we run the ingestion
 # for us, this process takes several hours, so in order to catch up 
 # I can't run it for every day, since it almost takes a day to ingest!
-ingest_every_so_many_days = 2
+ingest_every_so_many_days = 4
 
 def ingest():
 	# ingest is the most time consuming part by hours!!
     # run the xdmod-ingestor
-    print()
-    print("calling the ingester")
+    print("\ncalling the ingester")
+    #check = call(['xdmod-ingestor', '--debug'])
     check = call(['xdmod-ingestor'])
-    print(check)    
+    #print(check)    
+    print("done calling the ingester\n")
     # run service httpd reload
-    print()
     print("restarting httpd ")
     check = call(['service', 'httpd','reload'])
-    print(check)    
-    print()
+    print(check + "\n")    
 
 
 def scrub_file():
@@ -72,16 +90,14 @@ def eachtime(cluster, the_date):
     end_time = the_date.strftime('%Y-%m-%d') + 'T23:59'
     # grab the data from slurm
     print("########### starting a day ############")
-    print("calling sacct with " + start_time + " and " + end_time)
-    print()
+    print("calling sacct with " + start_time + " and " + end_time + "\n")
 	
 	# TODO: add error checking
     input =  'sacct --allusers --parsable2 --noheader --allocations --duplicates --clusters ' + cluster + ' --format jobid,jobidraw,cluster,partition,account,group,gid,user,uid,submit,eligible,start,end,elapsed,exitcode,state,nnodes,ncpus,reqcpus,reqmem,reqgres,reqtres,timelimit,nodelist,jobname --state CANCELLED,COMPLETED,FAILED,NODE_FAIL,PREEMPTED,TIMEOUT --starttime ' + start_time + ' --endtime '+ end_time + ' > ' + ingest_file
     print(input)
     check = check_output( input, shell=True )
     #        sacct --allusers --parsable2 --noheader --allocations --duplicates --clusters $one --format jobid,jobidraw,cluster,partition,account,group,gid,user,uid,submit,eligible,start,end,elapsed,exitcode,state,nnodes,ncpus,reqcpus,reqmem,reqgres,reqtres,timelimit,nodelist,jobname --state CANCELLED,COMPLETED,FAILED,NODE_FAIL,PREEMPTED,TIMEOUT --starttime 2018-06-29T03:59:37 --endtime 2018-07-10T03:59:37 >/tmp/ingest.dump
-    # pause for a few seconds
-    sleep(5)
+
     #        xdmod-shredder -r  -f slurm -i /tmp/ingest.dump 
     # if the file has data, lets ingest it
     if stat(ingest_file).st_size != 0:
@@ -91,9 +107,10 @@ def eachtime(cluster, the_date):
 
     	print("calling the shredder")
     	input = 'xdmod-shredder -r ' + cluster + ' -f slurm -i ' + ingest_clean_file
-    	print( input )
+    	#print( input )
     	check = check_output(input, shell=True) 
-    	print(check)    
+    	#print(check)    
+    	print("done calling the shredder")
     else:
 	print("empty ingest file")
     # print a time stamp
@@ -110,11 +127,17 @@ for day in range(number_of_days):
     print(day_format)
     # and for each cluster we have or had
     for cluster in clusters:
+        if cluster == 'hpcc' and skip_hpcc_until < day_format:
+            continue 
+
+        if cluster == 'perceval' and day_format in skip_perceval_dates:
+            continue 
+
         print('    ' + cluster)
 		# 5 second pause
         sleep(5)
         eachtime(cluster, day_format)
 
 	# after loding up a few dayof data, ingest and restart httpd
-    if day != 0 and (ingest_every_so_many_days % day) == 0:
-	    ingest()
+    #if day != 0 and (ingest_every_so_many_days % day) == 0:
+	ingest()
