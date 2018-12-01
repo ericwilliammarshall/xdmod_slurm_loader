@@ -70,7 +70,8 @@ def ingest():
     # run service httpd reload
     print("restarting httpd ")
     check = call(['service', 'httpd','reload'])
-    print(check + "\n")    
+    print(check , "\n")    
+    print("done restarting httpd ")
 
 
 def scrub_file():
