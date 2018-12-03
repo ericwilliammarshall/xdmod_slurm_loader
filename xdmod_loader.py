@@ -25,7 +25,7 @@ clusters = ('amarel',  'nh3', 'hpcc', 'perceval', 'amarelc', 'amarelg2', 'amarel
 start_date = date(2015,11,29)
 # test start
 #start_date = date(2016,02,01)
-date(2016,02,01)
+
 
 
 # our restrart date 2016-02-25
