@@ -16,8 +16,9 @@ from subprocess import check_output
 import os
 
 # TODO add a verbose option which enables ar disables the s commands
-# TODO: read the list of clusters from the config file in /etc/xdmod
-clusters = ('amarel',  'nh3', 'hpcc', 'perceval', 'amarelc', 'amarelg2', 'amareln')
+# TODO read the list of clusters from the config file in /etc/xdmod
+# TODO combine clusters and skip_until into one data structure and matching config file
+clusters = ('amarel',  'nh3', 'hpcc', 'perceval', 'amarelc', 'amarelg2', 'amareln', 'amarelg2')
 
 # TODO: add argument parsing and the ability to pick dates
 # original start date 2015-11-01
@@ -27,20 +28,21 @@ start_date = date(2015,11,29)
 #start_date = date(2016,02,01)
 
 
-
 # our restrart date 2016-02-25
 # 2015-12-30
 # 2016-03-26
 #start_date = date(2016,04,10)
 
 # hpcc was misconfigured at first
+# skip_until doesn't include perceval
 skip_until = { 
-    "hpcc": date(2016,01,10),
-    "nm3": date(2016,01,10),
-    "amarel": date(2017,01,10),
-    "amarelg": date(2018,07,10),
-    "amarelc": date(2018,07,10),
-    "amareln": date(2018,07,10),
+    "hpcc": date(2016,04,08),
+    "nm3": date(2017,03,24),
+    "amarel": date(2017,05,05),
+    "amarelg": date(2018,10,12),
+    "amarelg2": date(2018,11,12),
+    "amarelc": date(2018,10,12),
+    "amareln": date(2018,11,06),
 }
 # skip dates with bad data
 skip_perceval_dates = set(
