@@ -22,9 +22,9 @@ clusters = ('amarel',  'nh3', 'hpcc', 'perceval', 'amarelc', 'amarelg2', 'amarel
 # TODO: add argument parsing and the ability to pick dates
 # original start date 2015-11-01
 # for our systems
-#start_date = date(2015,11,29)
+start_date = date(2015,11,29)
 # test start
-start_date = date(2016,02,01)
+#start_date = date(2016,02,01)
 date(2016,02,01)
 
 
@@ -34,14 +34,31 @@ date(2016,02,01)
 #start_date = date(2016,04,10)
 
 # hpcc was misconfigured at first
-skip_hpcc_until = date(2016,01,10)
+skip_until = { 
+    "hpcc": date(2016,01,10),
+    "nm3": date(2016,01,10),
+    "amarel": date(2017,01,10),
+    "amarelg": date(2018,07,10),
+    "amarelc": date(2018,07,10),
+    "amareln": date(2018,07,10),
+}
 # skip dates with bad data
-skip_perceval_dates = (
-	date(2015,02,01)
-    #date(2016,02,16),
-    #date(2016,02,17),
-    #date(2016,02,18),
-    #date(2016,02,19),
+skip_perceval_dates = set(
+	[
+        date(2016,02,15),
+        date(2016,02,16),
+        date(2016,02,17),
+        date(2016,02,18),
+        date(2016,02,19),
+        date(2016,02,20),
+        date(2016,02,21),
+        date(2016,02,22),
+        date(2016,02,23),
+        date(2016,02,24),
+        date(2016,02,25),
+        date(2016,02,26),
+        date(2016,02,27),
+    ]
     )
 
 
@@ -70,12 +87,13 @@ def ingest():
     # run service httpd reload
     print("restarting httpd ")
     check = call(['service', 'httpd','reload'])
-    print(check , "\n")    
+    print(check , " \n")    
     print("done restarting httpd ")
 
 
 def scrub_file():
     """ filter the input file to remove truncated lines which crash the xmod-ingestor. This also removes the short lines that sacct generates for some failed array jobs (which also crash the xdmod ingestor"""  	
+    print("scrub file")
     with open(ingest_file, 'r') as ingest:	
         with open(ingest_clean_file, 'w', 0 ) as clean_ingest:
             for line in ingest: 
@@ -86,6 +104,7 @@ def scrub_file():
 	
 def eachtime(cluster, the_date):
     """ for each day, pull data from sacct and write to a file. If the file isn't empty, fully ingest the data and restart httpd"""
+    print("each time" + cluster)
 
     start_time = the_date.strftime('%Y-%m-%d') + 'T00:00'
     end_time = the_date.strftime('%Y-%m-%d') + 'T23:59'
@@ -100,13 +119,13 @@ def eachtime(cluster, the_date):
     print("done calling sacct \n")
     check = check_output( input, shell=True )
 
-    #        xdmod-shredder -r  -f slurm -i /tmp/ingest.dump 
     # if the file has data, lets ingest it
     if stat(ingest_file).st_size != 0:
         print("cleaning the data")
         scrub_file()
 
         print("\ncalling the shredder")
+        #        xdmod-shredder -r  -f slurm -i /tmp/ingest.dump 
         input = 'xdmod-shredder -r ' + cluster + ' -f slurm -i ' + ingest_clean_file
        	#print( input )
         check = check_output(input, shell=True) 
@@ -122,6 +141,8 @@ def eachtime(cluster, the_date):
 today = date.today()
 number_of_days = (today - start_date).days
 
+print( "############## starting ############### \n")
+print( "today: ", today, " number of days: " , number_of_days, " \n")
 # for each day between the begining of 2015 and now
 for day in range(number_of_days):
     day_format = start_date + timedelta(days=day)
@@ -129,16 +150,15 @@ for day in range(number_of_days):
     # and for each cluster we have or had
     for cluster in clusters:
         if cluster == 'hpcc' and skip_hpcc_until < day_format:
+        if skip_until[cluster] < day_format:
+            print("skipping "+ cluster + ": before start date"
             continue 
 
         if cluster == 'perceval' and day_format in skip_perceval_dates:
             continue 
 
         print('    ' + cluster)
-		# 5 second pause
-        sleep(5)
         eachtime(cluster, day_format)
-
-	# after loding up a few dayof data, ingest and restart httpd
-    #if day != 0 and (ingest_every_so_many_days % day) == 0:
-	ingest()
+        # after loding up a few dayof data, ingest and restart httpd
+        #if day != 0 and (ingest_every_so_many_days % day) == 0:
+        ingest()
