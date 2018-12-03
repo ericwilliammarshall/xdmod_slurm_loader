@@ -18,14 +18,14 @@ import os
 # TODO add a verbose option which enables ar disables the s commands
 # TODO read the list of clusters from the config file in /etc/xdmod
 # TODO combine clusters and skip_until into one data structure and matching config file
-clusters = ('amarel',  'nh3', 'hpcc', 'perceval', 'amarelc', 'amarelg2', 'amareln', 'amarelg2')
+clusters = ('amarel',  'nm3', 'hpcc', 'perceval', 'amarelc', 'amarelg2', 'amareln', 'amarelg2')
 
 # TODO: add argument parsing and the ability to pick dates
 # original start date 2015-11-01
 # for our systems
-start_date = date(2015,11,29)
+#start_date = date(2015,11,29)
 # test start
-#start_date = date(2016,02,01)
+start_date = date(2016,02,01)
 
 
 # our restrart date 2016-02-25
@@ -34,32 +34,33 @@ start_date = date(2015,11,29)
 #start_date = date(2016,04,10)
 
 # hpcc was misconfigured at first
-# skip_until doesn't include perceval
 skip_until = { 
-    "hpcc": date(2016,04,08),
-    "nm3": date(2017,03,24),
-    "amarel": date(2017,05,05),
+    "hpcc": date(2016,4,8),
+    "nm3": date(2017,3,24),
+    "amarel": date(2017,5,5),
     "amarelg": date(2018,10,12),
     "amarelg2": date(2018,11,12),
     "amarelc": date(2018,10,12),
-    "amareln": date(2018,11,06),
+    "amareln": date(2018,11,6),
+    "perceval": date(2015,11,29),
 }
 # skip dates with bad data
 skip_perceval_dates = set(
 	[
-        date(2016,02,15),
-        date(2016,02,16),
-        date(2016,02,17),
-        date(2016,02,18),
-        date(2016,02,19),
-        date(2016,02,20),
-        date(2016,02,21),
-        date(2016,02,22),
-        date(2016,02,23),
-        date(2016,02,24),
-        date(2016,02,25),
-        date(2016,02,26),
-        date(2016,02,27),
+        date(2016,2,14),
+        date(2016,2,15),
+        date(2016,2,16),
+        date(2016,2,17),
+        date(2016,2,18),
+        date(2016,2,19),
+        date(2016,2,20),
+        date(2016,2,21),
+        date(2016,2,22),
+        date(2016,2,23),
+        date(2016,2,24),
+        date(2016,2,25),
+        date(2016,2,26),
+        date(2016,2,27),
     ]
     )
 
@@ -111,7 +112,7 @@ def eachtime(cluster, the_date):
     start_time = the_date.strftime('%Y-%m-%d') + 'T00:00'
     end_time = the_date.strftime('%Y-%m-%d') + 'T23:59'
     # grab the data from slurm
-    print("########### starting a day ############")
+    print("########### starting a day for " + cluster + " ############")
     print("calling sacct with " + start_time + " and " + end_time + "\n")
 	
 	# TODO: add error checking
@@ -144,16 +145,16 @@ today = date.today()
 number_of_days = (today - start_date).days
 
 print( "############## starting ############### \n")
-print( "today: ", today, " number of days: " , number_of_days, " \n")
+print( "today: ", today, "start date: ", start_date, " number of days: " , number_of_days, " \n")
 # for each day between the begining of 2015 and now
 for day in range(number_of_days):
     day_format = start_date + timedelta(days=day)
     print(day_format)
     # and for each cluster we have or had
     for cluster in clusters:
-        if cluster == 'hpcc' and skip_hpcc_until < day_format:
-        if skip_until[cluster] < day_format:
-            print("skipping "+ cluster + ": before start date"
+        print( "checking ", skip_until.get(cluster), " against ", day_format)
+        if skip_until.get(cluster) > day_format:
+            print("skipping "+ cluster + ": before start date")
             continue 
 
         if cluster == 'perceval' and day_format in skip_perceval_dates:
