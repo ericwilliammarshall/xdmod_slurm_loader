@@ -24,8 +24,12 @@ clusters = ('amarel',  'nm3', 'hpcc', 'perceval', 'amarelc', 'amarelg2', 'amarel
 # original start date 2015-11-01
 # for our systems
 #start_date = date(2015,11,29)
+#start_date = date(2016,6,29)
+#start_date = date(2017,1,1)
+start_date = date(2018,1,1)
+#2017-04-22
+#start_date = date(2017,4,12)
 # test start
-start_date = date(2016,02,01)
 
 
 # our restrart date 2016-02-25
@@ -47,6 +51,9 @@ skip_until = {
 # skip dates with bad data
 skip_perceval_dates = set(
 	[
+        date(2016,2,11),
+        date(2016,2,12),
+        date(2016,2,13),
         date(2016,2,14),
         date(2016,2,15),
         date(2016,2,16),
@@ -77,14 +84,14 @@ magic_num = 24
 # ingest_every_so_many_days is how often we run the ingestion
 # for us, this process takes several hours, so in order to catch up 
 # I can't run it for every day, since it almost takes a day to ingest!
-ingest_every_so_many_days = 4
+ingest_every_so_many_days =20 
 
 def ingest():
 	# ingest is the most time consuming part by hours!!
     # run the xdmod-ingestor
     print("\ncalling the ingester")
     #check = call(['xdmod-ingestor', '--debug'])
-    check = call(['xdmod-ingestor'])
+    check = call(['xdmod-ingestor', '--debug'])
     #print(check)    
     print("done calling the ingester\n")
     # run service httpd reload
@@ -92,6 +99,10 @@ def ingest():
     check = call(['service', 'httpd','reload'])
     print(check , " \n")    
     print("done restarting httpd ")
+    print("restarting mariadb ")
+    check = call(['systemctl', ' restart', ' mariadb'])
+    print(check , " \n")    
+    print("done restarting mariadb ")
 
 
 def scrub_file():
@@ -144,9 +155,9 @@ def eachtime(cluster, the_date):
 today = date.today()
 number_of_days = (today - start_date).days
 
+# for each day between the start date and now
 print( "############## starting ############### \n")
 print( "today: ", today, "start date: ", start_date, " number of days: " , number_of_days, " \n")
-# for each day between the begining of 2015 and now
 for day in range(number_of_days):
     day_format = start_date + timedelta(days=day)
     print(day_format)
@@ -158,10 +169,16 @@ for day in range(number_of_days):
             continue 
 
         if cluster == 'perceval' and day_format in skip_perceval_dates:
+            print("skipping "+ cluster + ": due to date with bad data")
             continue 
 
         print('    ' + cluster)
         eachtime(cluster, day_format)
-        # after loding up a few dayof data, ingest and restart httpd
-        #if day != 0 and (ingest_every_so_many_days % day) == 0:
+
+    # after loding up a few dayof data, ingest and restart httpd
+    print ("do we ingest: ", day % ingest_every_so_many_days )
+    if day != 0 and (day % ingest_every_so_many_days ) == 0:
         ingest()
+
+# one last ingest to catch the last dreggs
+ingest()
